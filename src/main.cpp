@@ -7,10 +7,13 @@
 using namespace std;
 using namespace cv;
 bool pointSelected[2] = {false, false};
-Point points[2] = {Point(0, 0), Point(0, 0)};
+// Point points[2] = {Point(0, 0), Point(0, 0)};
+Point2f points[2] = {Point2f(0, 0), Point2f(0, 0)};
 Mat frame;
 bool isTransformed = false;
-Point trapezoidPoints[4];
+Point2f trapezoidPoints[4];
+Point2f rectanglePoints[4];
+Mat transformMatrix;
 
 void showMenu(string windowName) {
     // show the menu
@@ -20,11 +23,11 @@ void showMenu(string windowName) {
     Mat menuImage = Mat::zeros(300, 300, CV_8UC3);
     vector<string> menuItems = {
         "> Press ESC or Q to quit",
-        "> Press T to click and select 2",
+        "> Press T to reset and click and select 2",
         "points (upper left and bottom",
         "right) to define a rectangle",
         "for perspective transformation",
-        "> Press V to apply and view theperspective transformation"
+        "> Press V to see the top view of the cropped frame"
     };  
 
     int menuItemsSize = menuItems.size();
@@ -37,8 +40,8 @@ void showMenu(string windowName) {
 
 void createTrapezoidFromRectangle() {
     // Keep top left and bottom right points intact
-    Point topLeft = points[0];
-    Point bottomRight = points[1];
+    Point2f topLeft = points[0];
+    Point2f bottomRight = points[1];
     
     trapezoidPoints[0] = topLeft;  // Top left (unchanged)
     trapezoidPoints[2] = bottomRight;  // Bottom right (unchanged)
@@ -49,21 +52,21 @@ void createTrapezoidFromRectangle() {
     
     // Create trapezoid by moving top right and bottom left points inward
     // Top right: move left by 20% of width
-    trapezoidPoints[1] = Point(bottomRight.x - width * 0.2, topLeft.y);
+    trapezoidPoints[1] = Point2f(bottomRight.x - width * 0.2, topLeft.y);
     
     // Bottom left: move right by 20% of width
-    trapezoidPoints[3] = Point(topLeft.x - width * 0.2, bottomRight.y);
+    trapezoidPoints[3] = Point2f(topLeft.x - width * 0.2, bottomRight.y);
 }
 
 void mouseCallback(int event, int x, int y, int flags, void* userdata) {
     // Debug: Print all mouse events
     if (event == EVENT_LBUTTONDOWN) {
         if (!pointSelected[0]) {
-            points[0] = Point(x, y);
+            points[0] = Point2f(x, y);
             pointSelected[0] = true;
             cout << "Upper left point selected: " << points[0] << endl;
         } else if (!pointSelected[1]) {
-            points[1] = Point(x, y);
+            points[1] = Point2f(x, y);
             pointSelected[1] = true;
             cout << "Bottom right point selected: " << points[1] << endl;
         }
@@ -90,8 +93,15 @@ int main() {
     setMouseCallback(windowName, mouseCallback, NULL);
     cout << "Mouse callback set for window: " << windowName << endl;
     
+    int frameWidth = 640;
+    int frameHeight = 480;
+    // note the points need to be in the order of top left, top right, bottom right, bottom left same as the trapezoid points
+    Point2f framePoints[4] = {Point2f(0, 0), Point2f(frameWidth, 0), Point2f(frameWidth, frameHeight), Point2f(0, frameHeight)};
+
     while (true) {
         video >> frame;
+        // resize the frame to 640x480
+        resize(frame, frame, Size(frameWidth, frameHeight));
         
         if (frame.empty()) break;
         // Draw the two selected points
@@ -112,6 +122,12 @@ int main() {
                 for (int i = 0; i < 4; i++) {
                     circle(frame, trapezoidPoints[i], 3, Scalar(255, 0, 0), -1);
                 }
+                
+                // Apply perspective transformation with proper dimensions for the cropped frame
+                Mat transformedFrame;
+                warpPerspective(frame, transformedFrame, transformMatrix, Size(frameWidth, frameHeight));
+                
+                imshow("Top View", transformedFrame);
             } else {
                 // Draw rectangle
                 rectangle(frame, points[0], points[1], Scalar(0, 255, 0), 2);
@@ -135,8 +151,8 @@ int main() {
             if (pointSelected[0] && pointSelected[1]) {
                 cout << "V key pressed. Applying perspective transformation..." << endl;
                 createTrapezoidFromRectangle();
+                transformMatrix = getPerspectiveTransform(trapezoidPoints, framePoints);
                 isTransformed = true;
-                cout << "Transformation applied! Rectangle converted to trapezoid." << endl;
             } else {
                 cout << "Please select 2 points first before applying transformation." << endl;
             }
