@@ -1,7 +1,7 @@
 [perpective-transform.webm](https://github.com/user-attachments/assets/35ee4aa9-37c0-4264-bc99-3b3779cf785b)
 
 # Perspective Transformation
-A C++ application for applying top-view perspectice transformation to a selected region in a given video using C++ and OpenCV.
+A C++ application for applying top-view perspectice transformation to a selected region in a given video using OpenCV.
 
 ## Requirements
 
