@@ -6,8 +6,8 @@
 
 using namespace std;
 using namespace cv;
-bool pointSelected[4] = {false, false, false, false};
-Point points[4] = {Point(0, 0), Point(0, 0), Point(0, 0), Point(0, 0)};
+bool pointSelected[2] = {false, false};
+Point points[2] = {Point(0, 0), Point(0, 0)};
 Mat frame;
 
 void showMenu(string windowName) {
@@ -18,9 +18,11 @@ void showMenu(string windowName) {
     Mat menuImage = Mat::zeros(300, 300, CV_8UC3);
     vector<string> menuItems = {
         "Press ESC or Q to quit",
-        "Press T to click and select 4",
-        "points on the image to get the ",
-        "perspective transformation"
+        "Press T to click and select 2",
+        "points (upper left and bottom",
+        "right) to define a rectangle",
+        // "perspective transformation",
+        // "Press V to apply and view theperspective transformation"
     };  
 
     int menuItemsSize = menuItems.size();
@@ -45,19 +47,11 @@ void mouseCallback(int event, int x, int y, int flags, void* userdata) {
         if (!pointSelected[0]) {
             points[0] = Point(x, y);
             pointSelected[0] = true;
-            cout << "First point selected: " << points[0] << endl;
+            cout << "Upper left point selected: " << points[0] << endl;
         } else if (!pointSelected[1]) {
             points[1] = Point(x, y);
             pointSelected[1] = true;
-            cout << "Second point selected: " << points[1] << endl;
-        } else if (!pointSelected[2]) {
-            points[2] = Point(x, y);
-            pointSelected[2] = true;
-            cout << "Third point selected: " << points[2] << endl;
-        } else if (!pointSelected[3]) {
-            points[3] = Point(x, y);
-            pointSelected[3] = true;
-            cout << "Fourth point selected: " << points[3] << endl;
+            cout << "Bottom right point selected: " << points[1] << endl;
         }
     }
 }
@@ -86,10 +80,16 @@ int main() {
         video >> frame;
         
         if (frame.empty()) break;
-        for (int i = 0; i < 4; i++) {
+        // Draw the two selected points
+        for (int i = 0; i < 2; i++) {
             if (pointSelected[i]) {
                 circle(frame, points[i], 5, Scalar(0, 0, 255), -1);
             }
+        }
+        
+        // Draw rectangle if both points are selected
+        if (pointSelected[0] && pointSelected[1]) {
+            rectangle(frame, points[0], points[1], Scalar(0, 255, 0), 2);
         }
         
 
@@ -100,8 +100,8 @@ int main() {
         if (key == 27 || key == 'q' || key == 'Q') {
             break;
         } else if (key == 't' || key == 'T') {
-            cout << "T key pressed. Click on 4 points in the video window." << endl;
-            for (int i = 0; i < 4; i++) {
+            cout << "T key pressed. Click on 2 points (upper left and bottom right) in the video window." << endl;
+            for (int i = 0; i < 2; i++) {
                 pointSelected[i] = false;
             }
         }
