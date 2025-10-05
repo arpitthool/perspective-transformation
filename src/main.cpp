@@ -9,6 +9,8 @@ using namespace cv;
 bool pointSelected[2] = {false, false};
 Point points[2] = {Point(0, 0), Point(0, 0)};
 Mat frame;
+bool isTransformed = false;
+Point trapezoidPoints[4];
 
 void showMenu(string windowName) {
     // show the menu
@@ -17,12 +19,12 @@ void showMenu(string windowName) {
     // we use CV_8UC3 because we want to display the text in color
     Mat menuImage = Mat::zeros(300, 300, CV_8UC3);
     vector<string> menuItems = {
-        "Press ESC or Q to quit",
-        "Press T to click and select 2",
+        "> Press ESC or Q to quit",
+        "> Press T to click and select 2",
         "points (upper left and bottom",
         "right) to define a rectangle",
-        // "perspective transformation",
-        // "Press V to apply and view theperspective transformation"
+        "for perspective transformation",
+        "> Press V to apply and view theperspective transformation"
     };  
 
     int menuItemsSize = menuItems.size();
@@ -33,16 +35,28 @@ void showMenu(string windowName) {
     imshow(windowName, menuImage);
 }
 
+void createTrapezoidFromRectangle() {
+    // Keep top left and bottom right points intact
+    Point topLeft = points[0];
+    Point bottomRight = points[1];
+    
+    trapezoidPoints[0] = topLeft;  // Top left (unchanged)
+    trapezoidPoints[2] = bottomRight;  // Bottom right (unchanged)
+    
+    // Calculate rectangle dimensions
+    int width = bottomRight.x - topLeft.x;
+    int height = bottomRight.y - topLeft.y;
+    
+    // Create trapezoid by moving top right and bottom left points inward
+    // Top right: move left by 20% of width
+    trapezoidPoints[1] = Point(bottomRight.x - width * 0.2, topLeft.y);
+    
+    // Bottom left: move right by 20% of width
+    trapezoidPoints[3] = Point(topLeft.x - width * 0.2, bottomRight.y);
+}
+
 void mouseCallback(int event, int x, int y, int flags, void* userdata) {
     // Debug: Print all mouse events
-    if (event == EVENT_MOUSEMOVE) {
-        // Only print every 10th mouse move to avoid spam
-        static int moveCount = 0;
-        if (++moveCount % 10 == 0) {
-            cout << "Mouse moved to (" << x << ", " << y << ")" << endl;
-        }
-    }
-    
     if (event == EVENT_LBUTTONDOWN) {
         if (!pointSelected[0]) {
             points[0] = Point(x, y);
@@ -87,9 +101,21 @@ int main() {
             }
         }
         
-        // Draw rectangle if both points are selected
+        // Draw rectangle or trapezoid if both points are selected
         if (pointSelected[0] && pointSelected[1]) {
-            rectangle(frame, points[0], points[1], Scalar(0, 255, 0), 2);
+            if (isTransformed) {
+                // Draw trapezoid
+                for (int i = 0; i < 4; i++) {
+                    line(frame, trapezoidPoints[i], trapezoidPoints[(i + 1) % 4], Scalar(0, 255, 0), 2);
+                }
+                // Draw corner points of trapezoid
+                for (int i = 0; i < 4; i++) {
+                    circle(frame, trapezoidPoints[i], 3, Scalar(255, 0, 0), -1);
+                }
+            } else {
+                // Draw rectangle
+                rectangle(frame, points[0], points[1], Scalar(0, 255, 0), 2);
+            }
         }
         
 
@@ -103,6 +129,16 @@ int main() {
             cout << "T key pressed. Click on 2 points (upper left and bottom right) in the video window." << endl;
             for (int i = 0; i < 2; i++) {
                 pointSelected[i] = false;
+            }
+            isTransformed = false;
+        } else if (key == 'v' || key == 'V') {
+            if (pointSelected[0] && pointSelected[1]) {
+                cout << "V key pressed. Applying perspective transformation..." << endl;
+                createTrapezoidFromRectangle();
+                isTransformed = true;
+                cout << "Transformation applied! Rectangle converted to trapezoid." << endl;
+            } else {
+                cout << "Please select 2 points first before applying transformation." << endl;
             }
         }
     }
