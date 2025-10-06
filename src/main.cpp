@@ -52,10 +52,10 @@ void createTrapezoidFromRectangle() {
     
     // Create trapezoid by moving top right and bottom left points inward
     // Top right: move left by 20% of width
-    trapezoidPoints[1] = Point2f(bottomRight.x - width * 0.2, topLeft.y);
+    trapezoidPoints[1] = Point2f(bottomRight.x - width * 0.5, topLeft.y);
     
     // Bottom left: move right by 20% of width
-    trapezoidPoints[3] = Point2f(topLeft.x - width * 0.2, bottomRight.y);
+    trapezoidPoints[3] = Point2f(topLeft.x - width * 0.5, bottomRight.y);
 }
 
 void mouseCallback(int event, int x, int y, int flags, void* userdata) {
