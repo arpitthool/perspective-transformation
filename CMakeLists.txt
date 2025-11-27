@@ -12,6 +12,8 @@ add_executable(
     src/main.cpp 
     src/config.h
     src/glad.c
+    src/triangle_mesh.h
+    src/triangle_mesh.cpp
 )
 
 # Add include directories for GLAD
